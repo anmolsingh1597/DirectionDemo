@@ -29,7 +29,16 @@ public class MapsFragment extends Fragment {
 
     GoogleMap mMap;
 
-    LatLng userLocation, destLocation;
+    LatLng userLocation;
+    LatLng destLocation;
+
+    public GoogleMap getmMap(){
+        return mMap;
+    }
+
+    public LatLng getDestLocation(){
+        return destLocation;
+    }
 
     private OnMapReadyCallback callback = new OnMapReadyCallback() {
 
@@ -112,5 +121,8 @@ public class MapsFragment extends Fragment {
     public void setHomeMarker(Location location) {
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+    }
+    public void getDestination(IPassData callback){
+        callback.destinationSelected(destLocation, mMap);
     }
 }

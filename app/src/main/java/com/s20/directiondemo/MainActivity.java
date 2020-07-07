@@ -10,9 +10,12 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.s20.directiondemo.netWorking.GetDirectionsData;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,6 +29,8 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.util.Objects;
+
 public class MainActivity extends AppCompatActivity {
 
 
@@ -38,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
     private FusedLocationProviderClient mClient;
     private LocationCallback mLocationCallback;
     private LocationRequest mLocationRequest;
+
+    private LatLng userLocation;
 
     FragmentManager fragmentManager;
     MapsFragment fragment;
@@ -77,8 +84,20 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                fragment.getDestination(new IPassData() {
+                    @Override
+                    public void destinationSelected(LatLng location, GoogleMap map) {
+                        Object[] dataTransfer = new Object[3];
+                        String url = getDirectionUrl(location);
+                        dataTransfer[0] = map;
+                        dataTransfer[1] = url;
+                        dataTransfer[2] = location;
+
+                        GetDirectionsData getDirectionsData = new GetDirectionsData();
+                        //execute async
+                        getDirectionsData.execute(dataTransfer);
+                    }
+                });
             }
         });
 
@@ -87,6 +106,15 @@ public class MainActivity extends AppCompatActivity {
         } else {
             startUpdateLocation();
         }
+    }
+
+    private String getDirectionUrl(LatLng location) {
+        StringBuilder googleDirectionUrl = new StringBuilder("https://maps.googleapis.com/maps/api/directions/json?");
+        googleDirectionUrl.append("origin="+userLocation.latitude+","+userLocation.longitude);
+        googleDirectionUrl.append("&destination="+location.latitude+","+location.longitude);
+        googleDirectionUrl.append("&key="+getString(R.string.google_maps_key));
+        Log.d(TAG, "getdirectionalURL: " + googleDirectionUrl.toString());
+        return googleDirectionUrl.toString();
     }
 
     private void startUpdateLocation() {
@@ -100,7 +128,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 Location location = locationResult.getLastLocation();
-                Log.d(TAG, "onLocationResult: " + location);
+                userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+//                Log.d(TAG, "onLocationResult: " + location);
                 fragment.setHomeMarker(location);
             }
         };
