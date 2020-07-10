@@ -7,11 +7,15 @@ import androidx.fragment.app.Fragment;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -20,17 +24,25 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-public class MapsFragment extends Fragment {
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+
+public class MapsFragment extends Fragment implements GoogleMap.OnMarkerDragListener{
 
     FusedLocationProviderClient mClient;
+
+    private static String TAG = "MapsFragment";
 
     GoogleMap mMap;
 
     LatLng userLocation;
     LatLng destLocation;
+    Location destination;
 
     public GoogleMap getmMap(){
         return mMap;
@@ -59,6 +71,7 @@ public class MapsFragment extends Fragment {
                 return;
             }
             mMap = googleMap;
+            mMap.setOnMarkerDragListener(MapsFragment.this);
             mMap.setMyLocationEnabled(true);
             mClient.getLastLocation().addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
                 @Override
@@ -67,6 +80,8 @@ public class MapsFragment extends Fragment {
                         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 //                        mMap.addMarker(new MarkerOptions().position(latLng));
                         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+
+                        ((MainActivity)getActivity()).onLaunchShowNearbyPlaces(latLng);
                     }
                 }
             });
@@ -79,11 +94,20 @@ public class MapsFragment extends Fragment {
 //                    destLocation.setLatitude(latLng.latitude);
 //                    destLocation.setLongitude(latLng.longitude);
                     destLocation = latLng;
-                    setMarker(destLocation);
+                    destination = new Location("Your destination");
+                    destination.setLatitude(latLng.latitude);
+                    destination.setLongitude(latLng.longitude);
+//                    setMarker(destLocation);
+                    setMarker(destination);
                 }
             });
         }
     };
+
+    private void setMarker(Location destination) {
+        LatLng destLatLng = new LatLng(destination.getLatitude(), destination.getLongitude());
+        setMarker(destLatLng);
+    }
 
     private void setMarker(LatLng location) {
         MarkerOptions options = new MarkerOptions()
@@ -123,6 +147,46 @@ public class MapsFragment extends Fragment {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
     }
     public void getDestination(IPassData callback){
-        callback.destinationSelected(destLocation, mMap);
+        callback.destinationSelected(destination, mMap);
+    }
+
+    @Override
+    public void onMarkerDragStart(Marker marker) {
+
+    }
+
+    @Override
+    public void onMarkerDrag(Marker marker) {
+
+    }
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {
+       destination.setLatitude(marker.getPosition().latitude);
+       destination.setLongitude(marker.getPosition().longitude);
+
+        Geocoder geocoder = new Geocoder(getActivity(), Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(destination.getLatitude(), destination.getLongitude(), 1);
+
+            if(addresses != null && addresses.size()>0){
+                String address = "";
+                if(addresses.get(0).getAdminArea() != null){
+                    address += addresses.get(0).getAdminArea() + " ";
+                }
+                if (addresses.get(0).getLocality() != null){
+                    address += addresses.get(0).getLocality() + " ";
+                }
+                if(addresses.get(0).getPostalCode() != null){
+                    address += addresses.get(0).getPostalCode() + " ";
+                }
+                if(addresses.get(0).getThoroughfare() != null){
+                    address += addresses.get(0).getThoroughfare() + " ";
+                }
+//                Toast.makeText(, address, Toast.LENGTH_SHORT).show();
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
     }
 }

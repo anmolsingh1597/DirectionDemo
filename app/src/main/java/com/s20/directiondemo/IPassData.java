@@ -6,5 +6,5 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 
 public interface IPassData {
-    void destinationSelected(LatLng location, GoogleMap map);
+    void destinationSelected(Location location, GoogleMap map);
 }

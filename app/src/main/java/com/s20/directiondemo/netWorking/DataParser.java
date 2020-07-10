@@ -4,7 +4,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class DataParser {
     /**
@@ -78,6 +81,74 @@ public class DataParser {
        }
 
        return polyLinePoint;
+    }
+
+    /**
+     * parse method for getting nearby places from place api
+     * @param jsonData
+     * @return
+     */
+
+    public List<HashMap<String, String>> parsePlace(String jsonData) {
+        JSONArray jsonArray = null;
+        try {
+            JSONObject jsonObject = new JSONObject(jsonData);
+            jsonArray = jsonObject.getJSONArray("results");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return getPlaces(jsonArray);
+    }
+
+    private List<HashMap<String, String>> getPlaces(JSONArray jsonArray) {
+        int count = jsonArray.length();
+        List<HashMap<String, String>> placeList = new ArrayList<>();
+        HashMap<String, String> placeDictionary = null;
+        for (int i=0; i<count; i++){
+        try{
+            placeDictionary = getPlace((JSONObject)jsonArray.get(i));
+            placeList.add(placeDictionary);
+        }
+        catch (JSONException e){
+            e.printStackTrace();
+        }
+        }
+
+        return placeList;
+    }
+
+    private HashMap<String, String> getPlace(JSONObject jsonObject) {
+        HashMap<String,String> googlePlaceDictionary = new HashMap<>();
+        String placeName = "-NA-";
+        String vicinity = "-NA-";
+        String latitude = "";
+        String longitude = "";
+        String reference = "";
+        try {
+            if(!jsonObject.isNull("name")){
+                placeName = jsonObject.getString("name");
+            }
+            if(!jsonObject.isNull("vicinity")){
+                vicinity = jsonObject.getString("vicinity");
+            }
+            if(!jsonObject.isNull("reference")){
+                reference = jsonObject.getString("reference");
+            }
+            latitude = jsonObject.getJSONObject("geometry").getJSONObject("location").getString("lat");
+            longitude = jsonObject.getJSONObject("geometry").getJSONObject("location").getString("lng");
+
+            googlePlaceDictionary.put("placeName",placeName);
+            googlePlaceDictionary.put("vicinity",vicinity);
+            googlePlaceDictionary.put("latitiude",latitude);
+            googlePlaceDictionary.put("longitude",longitude);
+            googlePlaceDictionary.put("reference",reference);
+        }catch (JSONException e){
+            e.printStackTrace();
+        }
+
+        return googlePlaceDictionary;
+
     }
 
 }
