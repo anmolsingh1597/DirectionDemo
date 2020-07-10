@@ -5,6 +5,10 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -17,6 +21,8 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.s20.directiondemo.netWorking.GetDirectionsData;
 import com.s20.directiondemo.netWorking.GetNearbyPlacesData;
+import com.s20.directiondemo.netWorking.volley.GetByVolley;
+import com.s20.directiondemo.netWorking.volley.VolleySingleton;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,6 +35,8 @@ import android.view.View;
 
 import android.view.Menu;
 import android.view.MenuItem;
+
+import org.json.JSONObject;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -100,7 +108,8 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 fragment.getDestination(new IPassData() {
                     @Override
-                    public void destinationSelected(Location location, GoogleMap map) {
+                    public void destinationSelected(final Location location, final GoogleMap map) {
+                        /*
                         Object[] dataTransfer = new Object[3];
                         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                         String url = getDirectionUrl(latLng);
@@ -111,6 +120,22 @@ public class MainActivity extends AppCompatActivity {
                         GetDirectionsData getDirectionsData = new GetDirectionsData();
                         //execute async
                         getDirectionsData.execute(dataTransfer);
+
+                         */
+                        //By volley library
+                        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                        JsonObjectRequest jsonObjectRequest =  new JsonObjectRequest(Request.Method.GET,getDirectionUrl(latLng),null, new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                GetByVolley.getDirection(response,map,location);
+                            }
+                            }, new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+
+                            }
+                        });
+                        VolleySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsonObjectRequest);
                     }
                 });
             }
